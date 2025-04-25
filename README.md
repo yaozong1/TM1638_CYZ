@@ -1,72 +1,130 @@
-TM1638 芯片驱动库简介
-一、概述
-本库是用于驱动 TM1638 芯片的 C 语言代码库，主要实现了 TM1638 芯片的显示配置与控制功能，以及按键扫描功能（代码中未展示按键扫描部分）。它提供了多种显示函数，可方便地在 TM1638 驱动的数码管上显示数字、字母等信息。
-二、文件结构
-TM1638_CYZ.c：包含了主要的驱动代码，如显示函数、数据发送函数、延时函数等。
-TM1638_CYZ.h：头文件，声明了库中使用的函数和常量。
-三、主要功能
-1. 常量数组
-HexTo14Seg：将 0 - 9 的数字映射到 14 段数码管的编码。
-HexTo14Seg_Alpha：将字母 A - Z 映射到 14 段数码管的编码。
-2. 延时函数
-c
-void delay_us(uint32_t us);
-功能：实现微秒级延时。
-参数：us 为延时的微秒数。
-3. 显示函数
-3.1 显示单个数字
-c
-void display_one(uint8_t dat);
-功能：在数码管的第一位显示指定数字。
-参数：dat 为要显示的数字（0 - 9）。
-3.2 显示特定格式数据
-c
-void display_Rice(uint16_t dat, uint8_t DigitPos);
-功能：在指定位置显示特定格式的数据。
-参数：
-dat：16 位数据。
-DigitPos：显示位置（0 - 3）。
-3.3 显示多个特定格式数据
-c
-void display_Rice_Multi(uint16_t dat[4], uint8_t digitMask);
-功能：显示多个特定格式的数据，可通过位掩码控制显示哪些位置。
-参数：
-dat：包含 4 个 16 位数据的数组。
-digitMask：位掩码，如 0x01 启用位置 0，0x0F 启用全部 4 个位置。
-3.4 直接显示多个数字
-c
-void display_Rice_Multi_straight(uint8_t digiDATA_s[4], uint8_t digitMask);
-功能：直接显示多个数字（0 - 9），会自动将数字映射到 14 段编码。
-参数：
-digiDATA_s：包含 4 个数字（0 - 9）的数组。
-digitMask：位掩码，控制显示哪些位置。
-4. 数据发送函数
-4.1 发送 8 位数据
-c
-void send_8bit(uint8_t dat);
-功能：向 TM1638 芯片发送 8 位数据。
-参数：dat 为要发送的 8 位数据。
-4.2 发送控制命令
-c
-void send_command(uint8_t cmd);
-功能：向 TM1638 芯片发送控制命令。
-参数：cmd 为要发送的控制命令。
-四、使用示例
-以下是一个简单的使用示例，显示数字 5 在第一位：
-c
+# TM1638 14段数码管显示驱动库
+
+## 概述
+本库提供了基于STM32 HAL库的TM1638 14段数码管显示驱动实现，支持数字和字母显示。
+
+## 功能特性
+- ✅ 支持14段LED显示数字0-9和字母A-Z  
+- ✅ 单数字/多数字显示控制  
+- ✅ 自定义显示位置  
+- ✅ 优化的通信协议  
+- ✅ 兼容STM32 HAL库  
+
+## 硬件连接
+| TM1638引脚 | STM32连接 | 说明       |
+|------------|-----------|------------|
+| CLK        | PB1       | 时钟线     |
+| DIO        | PB2       | 数据线     |
+| STB        | PB0       | 片选线     |
+| VCC        | 5V        | 电源       |
+| GND        | GND       | 地线       |
+
+## 数码管&TM1638连接--JMF-4473BW8-059-P6.8
+| TM1638引脚 | JMF-4473BW8连接 | 说明       |
+|------------ |-----------|------------|
+| SEG1        | 16        | 阳极1     |
+| SEG2        | 1         | 阳极2     |
+| ~           | ~         | ~         |
+| SEG9        | 7         | 阳极7     |
+| GRID1       | 14        | 阴极 1    |
+| GRID2       | 13        | 阴极 2    |
+| ~           | ~         | ~         |
+| GRID7       | 5         | 阴极 7    |
+
+-具体的连接请看规格数
+
+## 快速开始
+1. 添加文件到工程：
+```c
 #include "TM1638_CYZ.h"
+```
 
-int main() {
-    // 初始化相关硬件（代码中未展示）
-    display_one(5);
-    while(1) {
-        // 主循环
-    }
-    return 0;
-}
+2. 初始化后调用显示函数：
+```c
+// 显示单个数字
+display_one(3); 
+
+// 多数字显示
+uint8_t nums[4] = {1,2,3,4};
+display_Rice_Multi_straight(nums, 0x0F);
+```
+
+## API文档
+### 基础函数
+| 函数                   | 说明               | 示例               |
+|------------------------|--------------------|--------------------|
+| `display_one(dat)`     | 显示单个数字       | `display_one(5)`   |
+| `display_Rice(dat,pos)`| 指定位置显示       | `display_Rice(HexTo14Seg[1], 0)` |
+
+### 高级函数
+```c
+// 多位置显示
+void display_Rice_Multi(uint16_t dat[4], uint8_t mask);
+
+// 直接显示数字数组
+void display_Rice_Multi_straight(uint8_t data[4], uint8_t mask);
+```
+
+## 编码参考
+### 数字编码示例：
+```c
+0x3F00, // 0 
+0x0600, // 1
+0x5B01  // 2
+```
+
+### 字母编码示例：
+```c
+0x7701, // A
+0x7C01, // b
+0x3900  // C
+```
+### 编码原理（共阳极）
+-  编码的0xabcd, ab作为高八位控制控制每一位分别控制SEGx的GRID1~GRID8.举例，转成2进制0b00010001，代表打开GRID1和GRID5. cd控制另外一组SEGx
+-  0xabcd分开为0xab和0xcd, 比如数码管的第一位SEG1（数码管外围）和SEG2(数码管内部) 
+-  GRID1-8对应的Bit0-bit7分别写到00HL~0EHL的bitx，x就代表SEG（x+1），详细参看下面的表格
+-  列举一个完整的编码方式 SEG1的0b0xxxxxxx每一位分别代表段码ABCDEFG1, SEG2的0b0xxxxxxx每一位分别代表G2HJKLMN(具体还是需要看连接方式)
+-  编码只针对我的硬件连接上面提到的硬件连接方式
+-  [点击查看 JMF-4473BW8-059-P6.8 规格书](https://cdn.sparkfun.com/assets/f/7/d/d/c/JMF-4473BW8-059-P6.8_-_.pdf)
 
 
-五、注意事项
-本库使用了 HAL 库进行 GPIO 操作，确保在使用前正确配置 HAL 库。
-延时函数 delay_us 依赖于 SystemCoreClock，确保该变量正确设置。
-显示函数中的控制命令和显示亮度等参数可根据需要进行调整。
+
+### LED 显示数据操作顺序
+
+### 位操作顺序（具体参考TM1638规格书）
+| SEG1-SEG4      | SEG5-SEG8       | SEG9-SEG10      | 未使用          | 对应阴极  |
+|----------------|-----------------|-----------------|-----------------|----------|
+| xxHL（低四位）  | xxHU（高四位）   | xxHL（低四位）   | xxHU（高四位）   |          |
+| B0 B1 B2 B3    | B4 B5 B6 B7     | B0 B1 B2 B3     | B4 B5 B6 B7     |         |
+| **地址低字节**  | **地址高字节**   | **地址低字节**   | **地址高字节**   |          |
+| 00HL           | 00HU            | 01HL            | 01HU            | GRID1    |
+| 02HL           | 02HU            | 03HL            | 03HU            | GRID2    |
+| 04HL           | 04HU            | 05HL            | 05HU            | GRID3    |
+| 06HL           | 06HU            | 07HL            | 07HU            | GRID4    |
+| 08HL           | 08HU            | 09HL            | 09HU            | GRID5    |
+| 0AHL           | 0AHU            | 0BHL            | 0BHU            | GRID6    |
+| 0CHL           | 0CHU            | 0DHL            | 0DHU            | GRID7    |
+| 0EHL           | 0EHU            | 0FHL            | 0FHU            | GRID8    |
+
+## 示例代码
+### 显示字母组合
+```c
+uint16_t custom[4] = {
+  HexTo14Seg_Alpha[0], // A
+  HexTo14Seg[8],       // 8 
+  HexTo14Seg_Alpha[2], // C
+  HexTo14Seg[5]        // 5
+};
+display_Rice_Multi(custom, 0x0F);
+```
+
+## 注意事项
+1. 使用前需初始化硬件
+2. 亮度调节修改 `0x8A` 参数
+3. 字母区分大小写（b≠B）
+
+## 许可证
+MIT License
+
+## 贡献
+欢迎提交Issue或PR
